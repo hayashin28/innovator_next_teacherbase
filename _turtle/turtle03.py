@@ -1,5 +1,6 @@
 # 正方形＋対角線
 from turtle import *
+shape("turtle")
 
 forward(100)
 left(90)

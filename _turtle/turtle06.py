@@ -1,5 +1,6 @@
 #風車
 from turtle import *
+shape("turtle")
 
 forward(80)
 left(135)

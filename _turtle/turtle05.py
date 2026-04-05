@@ -1,5 +1,6 @@
 # 六芒星
 from turtle import *
+shape("turtle")
 
 speed(0)
 

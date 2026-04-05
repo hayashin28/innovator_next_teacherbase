@@ -1,5 +1,6 @@
 # 正三角形
 from turtle import *
+shape("turtle")
 
 forward(100)
 left(120)

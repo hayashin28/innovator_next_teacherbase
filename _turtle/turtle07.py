@@ -1,6 +1,7 @@
 # トライフォース
 from turtle import *
 import math
+shape("turtle")
 
 speed(0)
 hideturtle()
@@ -47,5 +48,7 @@ down_triangle(-60, H)
 up_triangle(-30, 0)
 down_triangle(0, H)
 up_triangle(30, 0)
+
+hideturtle()      # カメを消す
 
 done()
