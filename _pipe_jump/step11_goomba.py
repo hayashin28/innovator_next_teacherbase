@@ -106,25 +106,25 @@ class BrickParticle(Widget):
 
 #----------------------------------------------
 # Step11 追加:
-# 30秒後に土管から出現し、左へ歩くクリボー
-#
-# なぜ別クラスにするのか：
-# - マリオとは別の見た目・速度を持つため
-# - 今後「当たり判定」や「踏まれたら消える」などを足しやすくするため
+# 30秒後に土管から出現し、
+# 土管の外へ出るまでは土管の上端を水平移動し、
+# 土管の判定外へ出たら床へ落下して左へ歩くクリボー
 #----------------------------------------------
 class Goomba(Image):
     """
     土管から出現する敵キャラクター。
 
+    なぜ別クラスにするのか：
+    - マリオとは別の見た目・速度を持つため
+    - Step11 では「出現中」と「歩行中」の状態を持たせたいため
+    - 今後、当たり判定や踏みつけ処理を追加しやすくするため
+
     入出力：
     - 入力: 毎フレームのdt
-    - 出力: 左へ少しずつ移動した見た目
+    - 出力: 左へ移動し、必要に応じて落下する見た目
 
     副作用：
     - ステージ上に表示され、時間経過で位置が変わる
-
-    例外：
-    - 特になし
     """
 
     speed = NumericProperty(120.0)
@@ -137,9 +137,13 @@ class Goomba(Image):
             **kwargs
         )
 
-    def step(self, dt: float):
-        """1フレーム分だけ左へ歩かせる"""
-        self.x -= self.speed * dt
+        # Step11 追加:
+        # まだ土管の中から出ている途中かどうか
+        self.exiting_pipe = True
+
+        # Step11 追加:
+        # 落下に使う縦速度
+        self.vy = 0.0
 
 
 #----------------------------------------------
@@ -153,7 +157,8 @@ class StageWithBreakBlock(Widget):
 
     Step11:
     さらに、30秒後に土管からクリボーが出現し、
-    左へ歩く処理を追加したステージ。
+    土管の外へ出るまでは上端を水平移動し、
+    土管の判定外へ出たら床へ落下して左へ歩く処理を追加したステージ。
     """
 
     def __init__(self, **kwargs):
@@ -184,11 +189,9 @@ class StageWithBreakBlock(Widget):
         self.elapsed_time = 0.0
 
         # クリボーをもう出現させたかどうか
-        # 1回だけ出したいのでフラグで管理します
         self.goomba_spawned = False
 
         # クリボー本体
-        # まだ画面には追加せず、30秒たった時点で add_widget() します
         self.goomba = None
         # -------------------
 
@@ -280,11 +283,11 @@ class StageWithBreakBlock(Widget):
         # - 画像の読み込み失敗を起動直後に気づけるようにするため
         # - 出現自体は後でも、部品の準備は初期化時に済ませたいから
         #
-        # 初期位置は「土管の口の少し内側」に置いています。
-        # 30秒後に add_widget() された瞬間、土管から出てきたように見せる狙いです。
+        # 初期位置は「土管の右側の内側」に寄せています。
+        # ここから左へ出ていく間は、土管の上端に高さを固定します。
         self.goomba = Goomba(
             source_path=goomba_path,
-            pos=(self.pipe.x + 8, self.pipe.top - 40),
+            pos=(self.pipe.right - 20, self.pipe.top - 48),
         )
         # -------------------
 
@@ -510,19 +513,41 @@ class StageWithBreakBlock(Widget):
 
         # --- Step11 追加 ---
         # 30秒後になったら、土管からクリボーを出現させる
-        #
-        # なぜこの位置で判定するのか：
-        # - update() が毎フレーム必ず呼ばれるため
-        # - 「時刻を見て一度だけ発火する」処理と相性がよいため
         if not self.goomba_spawned and self.elapsed_time >= 30.0:
             self.add_widget(self.goomba)
             self.goomba_spawned = True
 
-        # クリボー出現後は、左へ歩かせる
+        # クリボー出現後の処理
         if self.goomba_spawned and self.goomba is not None:
-            self.goomba.step(dt)
+            # Step11 追加:
+            # 1. まずは土管の口から横へ出る
+            # 2. 土管の判定外へ出たら、重力を有効にする
+            # 3. 床に着地したら、そのまま左へ歩かせる
+            if self.goomba.exiting_pipe:
+                # 土管から出ている最中は、土管の上端に高さを固定する
+                self.goomba.y = self.pipe.top - self.goomba.height
 
-            # 画面外へ出たら、これ以上は進めない
+                # 左へ少しずつ移動して、土管の外へ出す
+                self.goomba.x -= self.goomba.speed * dt
+
+                # クリボーの右端が土管の左端より左に来たら、
+                # 「もう土管から出きった」とみなして落下フェーズへ移る
+                if self.goomba.right <= self.pipe.x:
+                    self.goomba.exiting_pipe = False
+                    self.goomba.vy = 0.0
+
+            else:
+                # 土管を出たあとは、左へ歩きつつ重力で落とす
+                self.goomba.x -= self.goomba.speed * dt
+                self.goomba.vy -= self.gravity * dt
+                self.goomba.y += self.goomba.vy * dt
+
+                # 床に着地したら止める
+                if self.goomba.y <= self.floor.top:
+                    self.goomba.y = self.floor.top
+                    self.goomba.vy = 0.0
+
+            # 画面外へ出たら、それ以上は進めない
             if self.goomba.right < 0:
                 self.goomba.x = -self.goomba.width
         # -------------------
