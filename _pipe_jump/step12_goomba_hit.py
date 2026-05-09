@@ -106,7 +106,7 @@ class BrickParticle(Widget):
 
 #----------------------------------------------
 # Step11 追加:
-# 30秒後に土管から出現し、
+# 土管から出現し、
 # 土管の外へ出るまでは土管の上端を水平移動し、
 # 土管の判定外へ出たら床へ落下して左へ歩くクリボー
 #----------------------------------------------
@@ -156,9 +156,13 @@ class StageWithBreakBlock(Widget):
     下からレンガに当たったらブロックを壊す処理を実装したステージ。
 
     Step11:
-    さらに、30秒後に土管からクリボーが出現し、
+    さらに、クリボーが出現し、
     土管の外へ出るまでは上端を水平移動し、
     土管の判定外へ出たら床へ落下して左へ歩く処理を追加したステージ。
+
+    Step12:
+    ブロック全消しでクリボーが即出現し、
+    マリオがクリボーに接触したらゲームオーバーになる処理を追加したステージ。
     """
 
     def __init__(self, **kwargs):
@@ -185,7 +189,7 @@ class StageWithBreakBlock(Widget):
 
         # --- Step11 追加 ---
         # ステージ開始からの経過時間
-        # 30秒後にクリボーを出現させるために使います
+        # Step11 では時間出現に使っていた名残です
         self.elapsed_time = 0.0
 
         # クリボーをもう出現させたかどうか
@@ -193,6 +197,12 @@ class StageWithBreakBlock(Widget):
 
         # クリボー本体
         self.goomba = None
+        # -------------------
+
+        # --- Step12 追加 ---
+        # マリオがクリボーに当たったら True にするフラグ
+        # update() 冒頭で停止判定に使います
+        self.game_over = False
         # -------------------
 
         # 背景画像と雲画像のパスを探す
@@ -372,9 +382,16 @@ class StageWithBreakBlock(Widget):
         dt には「前回からの経過時間（秒）」が渡される
         """
 
+        # --- Step12 追加 ---
+        # ゲームオーバー後は更新を止める
+        # これにより、マリオやクリボーがそれ以上動かなくなります
+        if self.game_over:
+            return
+        # -------------------
+
         # --- Step11 追加 ---
         # ステージ開始からの経過時間を加算
-        # 非同期処理ではなく、既存の update ループで時間を管理します
+        # Step11 では時間出現に使っていた名残です
         self.elapsed_time += dt
         # -------------------
 
@@ -511,11 +528,16 @@ class StageWithBreakBlock(Widget):
         self.particles = alive_particles
         # -------------------
 
-        # --- Step11 追加 ---
-        # 30秒後になったら、土管からクリボーを出現させる
-        if not self.goomba_spawned and self.elapsed_time >= 10.0:
+        # --- Step12 追加 ---
+        # ブロックをすべて壊したら、クリボーを即出現させる
+        #
+        # なぜこの条件にするのか：
+        # - 「時間経過」よりも、プレイヤーの行動結果で敵を出したいため
+        # - 授業では「ブロック全消し → 新しい敵登場」の方が因果が分かりやすいため
+        if not self.goomba_spawned and len(self.bricks) == 0:
             self.add_widget(self.goomba)
             self.goomba_spawned = True
+        # -------------------
 
         # クリボー出現後の処理
         if self.goomba_spawned and self.goomba is not None:
@@ -550,6 +572,17 @@ class StageWithBreakBlock(Widget):
             # 画面外へ出たら、それ以上は進めない
             if self.goomba.right < 0:
                 self.goomba.x = -self.goomba.width
+
+        # --- Step12 追加 ---
+        # マリオとクリボーがぶつかったらゲームオーバー
+        #
+        # なぜここで判定するのか：
+        # - クリボーの出現・移動が終わったあとで、現在位置どうしを比較したいため
+        # - 敵更新処理の延長として自然につながるため
+        if self.goomba_spawned and self.goomba is not None:
+            if self.mario.collide_widget(self.goomba):
+                self.game_over = True
+                print("GAME OVER")
         # -------------------
 
 
@@ -637,15 +670,15 @@ class Mario(Image):
 #----------------------------------------------
 # アプリ本体
 #----------------------------------------------
-class Step11GoombaApp(App):
+class Step12GoombaHitApp(App):
 
     def build(self):
         # ウインドウの初期サイズを決める
         Window.size = (800, 540)
 
-        # --- Step11 修正 ---
-        # 実行時に教材段階が分かるよう、タイトルを Step11 に変更
-        self.title = 'Pipe & Jump - Step11 Goomba Spawn'
+        # --- Step12 修正 ---
+        # 実行時に教材段階が分かるよう、タイトルを Step12 に変更
+        self.title = 'Pipe & Jump - Step12 Goomba Hit'
         # -------------------
 
         return StageWithBreakBlock()
@@ -675,4 +708,4 @@ class Step11GoombaApp(App):
 
 
 if __name__ == '__main__':
-    Step11GoombaApp().run()
+    Step12GoombaHitApp().run()

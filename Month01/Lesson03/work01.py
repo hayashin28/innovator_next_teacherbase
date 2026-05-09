@@ -10,8 +10,3 @@ def count_up():
 
 
 count_up()
-# 無限ループ -> while True:
-# 一番近いループから抜け出す -> break
-# while True:
-#   if ????????:
-#       break
