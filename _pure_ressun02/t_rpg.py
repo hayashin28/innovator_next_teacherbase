@@ -1,51 +1,63 @@
 import random
-import time
 
+
+
+print("ここは一度足を踏み入れたら戻れない森の迷宮....")
 hp = 20
+key = False
 
-print('ここは一度足を踏み入れたら二度と戻れない森の迷宮')
-
-key:bool = False
-
-while True:
-    print(f'現在のHP：{hp}')
-    n = random.randint(1, 6)
-    input('移動する。: Enter')
-
-    time.sleep(3)
-
-    if n == 1:
-        print('薬草を見つけた。HPが3回復した。')
-        hp += 3
-    elif n == 2:
-        print('罠に掛かってしまった！HPが5減ってしまった！')
+while True: # 無限ループ
+    input("移動する：Enter")
+    num = random.randint(1, 6)
+    
+    if num == 1:
+        print("何事もなかった。")
+    elif num == 2:
+        print("罠にハマってしまった！")
         hp -= 5
-    elif n == 3:
-        print('魔物に襲われた！HPが8減ってしまった！')
-        hp -= 8
-    elif n == 4:
-        print('綺麗な泉を発見した。')
-        time.sleep(3)
-        n = random.randint(1, 6)
-        if n / 2 == 1:
-            print('体を休めることが出来た。HPが10回復した。')
-            hp += 10
+    elif num == 3:
+        print("草を拾ったったｗｗｗｗｗｗｗ。")
+        num = random.randint(1, 6)
+        if num % 2 == 1:
+            print("薬草だった！")            
+            hp += 4
         else:
-            print('奥から魔物が現れた！HPが8減ってしまった！')
-            hp -= 8
-    elif n == 5:
-            print('特に何もなかった。')
+            print("Vipperが現れた。大草原ｗｗｗ")
+            hp -= 1
+    elif num == 4:
+        print("モンスターに襲われた！")
+        hp -= 10
+    elif num == 5:
+        print("綺麗な泉を発見した。")
+        num = random.randint(1, 6)
+
+        if num % 2 == 0:
+            print("泉で休憩をした。")
+            hp += 9
+        else:
+            print("モンスターに襲われた！")
+            hp -= 10
     else:
-        if key:
-            print('大きな扉がある。鍵を使って扉を開けると見たこともない綺麗な大地が広がっていた。')
-            print('～ Fin ～')
+        if key == True:
+            print("鍵で扉を開いた。")
+            print("新しい大地を発見した！")
+            print("～ Fin ～")
             break
         else:
-            print('宝箱がある。宝箱から『鍵』を取り出した。')
-            key = not key
-        
-    if hp > 20:
+            print("宝箱がある。")
+            print("中から鍵を拾った")
+            key = True
+    
+    
+    # HPが上限を超えないように調整
+    if hp > 20: hp = 20
+    
+    print(f"現在のHP：{hp}")
+    
+    if hp <= 0:
+        print("淫夢神父：おおGの者よコ↑コ↓で力尽きるとはなさけない。")
+        print("ギャル尼僧：マジウケる。大草原不可避なんですけど！。")
+        print("碇神父：行かないなら帰りなさい。")
+        print("やきう民：行くんゴ！")
         hp = 20
-    elif hp < 0:
-        print('力尽きてしまった。')
-        break
+        key = False
